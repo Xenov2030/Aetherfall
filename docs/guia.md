@@ -16,7 +16,7 @@
 
 **Compras y tesoro.** Primero configurá las denominaciones, si querés registrarlas. Definí nombre y propiedades conocidas del producto separados de sus notas privadas. Revelá productos y precio ofrecido a cada personaje. El jugador solicita; el máster puede negociar el precio final y confirmar o rechazar. Confirmar verifica saldo, stock y permiso, descuenta y entrega una sola vez. Entregas, transferencias y consumo son acciones explícitas del máster. El fondo común y el reparto grupal tienen pendientes específicos; no se simulan.
 
-**Invitar.** Registrá el correo real y el rol en Campaña. La invitación vence a los siete días. Compartí personalmente la dirección de acceso; no se envía un mensaje al crear la invitación. Cuando la persona use su enlace de acceso, se asigna su membresía y podés asignarle la ficha. Desactivar conserva personajes e historia. No podés desactivar tu propio acceso desde esa acción.
+**Invitar.** Registrá el correo real y el rol en Campaña. La invitación vence a los siete días. Compartí personalmente la dirección de acceso; no se envía un mensaje al crear la invitación. Cuando la persona use su enlace de acceso, se asigna su membresía y puede elegir un personaje disponible una sola vez. Después solo el máster puede cambiar la asignación desde el selector de propietario de la ficha. Para cambiarlo, liberá primero la asignación anterior. Desactivar conserva personajes e historia. No podés desactivar tu propio acceso desde esa acción.
 
 ## Jugador
 
@@ -31,3 +31,5 @@ En Bitácoras y momentos podés escribir borradores privados, intenciones y recu
 La correspondencia es personal. Respondé si el máster lo habilitó. Las afirmaciones de un NPC siguen siendo afirmaciones, aunque estén escritas en la aplicación.
 
 Los catálogos solo muestran productos autorizados. Solicitar una compra no gasta dinero: el máster debe confirmarla. Ver un objeto no implica poseerlo, y recibirlo no revela sus propiedades secretas. Las tiradas del panel de dados se generan y guardan en el servidor; no reemplazan la decisión de usar dados físicos.
+
+**Elección inicial de personaje.** Cada jugador confirma un personaje disponible al ingresar. No puede tomar otro ni reiniciar su elección, incluso si el máster libera o elimina su ficha. Solo el máster puede reasignarla manualmente. Dos jugadores no pueden tomar el mismo personaje. La lista muestra únicamente nombres; las fichas y notas permanecen privadas. Los cinco personajes iniciales están disponibles si siguen sin propietario. Los personajes nuevos requieren que el máster active «Disponible para la elección inicial de jugadores» al crearlos o editarlos. No requiere nuevas migraciones de base de datos.

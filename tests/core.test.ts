@@ -593,3 +593,72 @@ test('Restaurar un respaldo con referencias de Drive reasigna originales sin nec
     originalKey,
   );
 });
+
+test('Elección única: privacidad, concurrencia y cambios exclusivos del máster', async () => {
+  const { characterChoices, claimCharacter } = await import('../lib/character-selection');
+  async function player() {
+    const id = randomUUID();
+    await (
+      await db()
+    ).query('INSERT INTO users(id,email) VALUES($1,$2)', [id, `${id}@example.test`]);
+    await (
+      await db()
+    ).query("INSERT INTO members(campaign_id,user_id,role,active) VALUES($1,$2,'player',true)", [
+      DEMO,
+      id,
+    ]);
+    return actorFor(id, DEMO);
+  }
+  const a = await player(),
+    b = await player();
+  const first = await createRecord(master, {
+    kind: 'character',
+    title: 'Elegible uno',
+    body: 'SECRETO',
+    data: { selfSelectable: true, secret: 'OCULTO' },
+  });
+  const second = await createRecord(master, {
+    kind: 'character',
+    title: 'Elegible dos',
+    data: { selfSelectable: true },
+  });
+  const hidden = await createRecord(master, { kind: 'character', title: 'Oculto', data: {} });
+  const choices = await characterChoices(a);
+  assert(choices.available.some((c) => c.id === first.id));
+  assert(!choices.available.some((c) => c.id === hidden.id));
+  assert(choices.available.every((c) => Object.keys(c).sort().join(',') === 'id,title'));
+  await assert.rejects(claimCharacter(a, hidden.id));
+  const samePlayer = await Promise.allSettled([
+    claimCharacter(a, first.id),
+    claimCharacter(a, second.id),
+  ]);
+  assert.equal(samePlayer.filter((r) => r.status === 'fulfilled').length, 1);
+  const own = await one(
+    "SELECT id FROM records WHERE campaign_id=$1 AND owner_id=$2 AND kind='character'",
+    [DEMO, a.userId],
+  );
+  const free = own!.id === first.id ? second : first;
+  await assert.rejects(claimCharacter(a, free.id));
+  assert.deepEqual(await characterChoices(a), { locked: true, available: [] });
+  await assert.rejects(assignCharacter(a, free.id, { user_id: a.userId }));
+  await assert.rejects(assignCharacter(master, free.id, { user_id: a.userId }));
+  await assignCharacter(master, own!.id, { user_id: null });
+  await assert.rejects(claimCharacter(a, free.id));
+  await assignCharacter(master, free.id, { user_id: a.userId });
+  await trashRecord(master, free.id);
+  await assignCharacter(master, own!.id, { user_id: a.userId });
+  await assert.rejects(trashRecord(master, free.id, true));
+  const c = await player();
+  const shared = await createRecord(master, {
+    kind: 'character',
+    title: 'Competido',
+    data: { selfSelectable: true },
+  });
+  const race = await Promise.allSettled([
+    claimCharacter(b, shared.id),
+    claimCharacter(c, shared.id),
+  ]);
+  assert.equal(race.filter((r) => r.status === 'fulfilled').length, 1);
+  await assert.rejects(claimCharacter({ ...b, preview: true }, shared.id));
+  await assert.rejects(claimCharacter(master, shared.id));
+});

@@ -6,6 +6,7 @@ import { JournalPanel, CorrespondencePanel } from '@/components/community-panels
 import CommercePanel from '@/components/commerce-panel';
 import IntegrationPanel from '@/components/integration-panel';
 import StoragePanel from '@/components/storage-panel';
+import { characterIsSelectable } from '@/lib/character-catalog';
 import {
   LayoutDashboard,
   FolderOpen,
@@ -365,6 +366,65 @@ export default function Workspace({ campaignId }: { campaignId: string }) {
                       </button>
                     )}
                 </div>
+                {!isMaster &&
+                  !readOnly &&
+                  characters.length === 0 &&
+                  overview.characterSelection && (
+                    <section className="panel">
+                      <h2>Elegí tu personaje</h2>
+                      <p>
+                        La elección es permanente. Después, solo el máster puede cambiar tu
+                        asignación.
+                      </p>
+                      {overview.characterSelection.locked ? (
+                        <p>
+                          Tu elección ya está registrada. Pedile al máster que revise tu asignación.
+                        </p>
+                      ) : overview.characterSelection.available.length === 0 ? (
+                        <p>No hay personajes disponibles. Consultá al máster.</p>
+                      ) : (
+                        <form
+                          onSubmit={async (e) => {
+                            e.preventDefault();
+                            const id = new FormData(e.currentTarget).get('character');
+                            if (
+                              !id ||
+                              !window.confirm(
+                                '¿Confirmás este personaje? Solo el máster podrá cambiarlo después.',
+                              )
+                            )
+                              return;
+                            await run(
+                              () => request(`/characters/${id}/claim`, 'POST', {}),
+                              'Personaje asignado',
+                            );
+                            await load();
+                          }}
+                        >
+                          <Field label="Personaje disponible">
+                            <select name="character" required defaultValue="">
+                              <option value="" disabled>
+                                Seleccioná un personaje
+                              </option>
+                              {overview.characterSelection.available.map((c: Row) => (
+                                <option key={c.id} value={c.id}>
+                                  {c.title}
+                                </option>
+                              ))}
+                            </select>
+                          </Field>
+                          <button className="button primary" disabled={busy}>
+                            Confirmar personaje
+                          </button>
+                        </form>
+                      )}
+                    </section>
+                  )}
+                {!isMaster && !readOnly && characters.length > 0 && (
+                  <p className="notice">
+                    Tu personaje está asignado. Solo el máster puede cambiar esta asignación.
+                  </p>
+                )}
                 {tab === 'home' ? (
                   <>
                     <section className="home-grid">
@@ -935,6 +995,7 @@ function RecordModal({
   close: () => void;
   save: (p: Row) => Promise<void>;
 }) {
+  const [selfSelectable, setSelfSelectable] = useState(false);
   const [kind, setKind] = useState(initialKind),
     [title, setTitle] = useState(''),
     [body, setBody] = useState(''),
@@ -965,7 +1026,7 @@ function RecordModal({
                   body,
                   status,
                   folder_id: folder || null,
-                  data: kind === 'character' ? { sheet: data, editable: [] } : data,
+                  data: kind === 'character' ? { sheet: data, editable: [], selfSelectable } : data,
                 },
           );
           setSaving(false);
@@ -1075,6 +1136,14 @@ function RecordModal({
               Dejá vacíos los datos que todavía no están definidos. La ficha no se comparte con
               otros jugadores.
             </p>
+            <label className="checkbox">
+              <input
+                type="checkbox"
+                checked={selfSelectable}
+                onChange={(e) => setSelfSelectable(e.target.checked)}
+              />
+              Disponible para la elección inicial de jugadores (solo se mostrará el nombre)
+            </label>
             <div className="form-grid">
               {characterFields.map(([k, label]) => (
                 <Field key={k} label={label}>
@@ -1405,6 +1474,22 @@ function DetailDrawer({
                         </Field>
                       ))}
                     </div>
+                    <label className="checkbox">
+                      <input
+                        type="checkbox"
+                        checked={characterIsSelectable(r.title, JSON.parse(data))}
+                        onChange={(e) =>
+                          setData(
+                            JSON.stringify(
+                              { ...JSON.parse(data), selfSelectable: e.target.checked },
+                              null,
+                              2,
+                            ),
+                          )
+                        }
+                      />
+                      Disponible para la elección inicial de jugadores (solo se mostrará el nombre)
+                    </label>
                     <fieldset>
                       <legend>Edición permitida al propietario</legend>
                       {[

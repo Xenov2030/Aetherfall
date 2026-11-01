@@ -17,6 +17,7 @@ import * as service from '@/lib/service';
 import { validateFile, putObject, readObject, signedObject, proxyObject } from '@/lib/storage';
 import { exportCampaign } from '@/lib/backup';
 import { storageStatus, checkDrive, backupToDrive } from '@/lib/drive-backup';
+import { characterChoices, claimCharacter } from '@/lib/character-selection';
 import * as community from '@/lib/community';
 import * as commerce from '@/lib/commerce';
 import {
@@ -151,6 +152,7 @@ async function dispatch(req: NextRequest, { params }: { params: Promise<{ path: 
         preview: !!a.preview,
         records,
         characters,
+        characterSelection: await characterChoices(a),
         folders,
         members,
         invitations,
@@ -159,6 +161,11 @@ async function dispatch(req: NextRequest, { params }: { params: Promise<{ path: 
         threadCount: (await community.threads(a)).length,
         rolls,
       });
+    }
+    if (section === 'characters') {
+      if (method === 'GET' && id === 'choices') return json(await characterChoices(a));
+      if (method === 'POST' && id && p[4] === 'claim')
+        return json(await claimCharacter(a, uuid(id)));
     }
     if (section === 'integrations') {
       assert(!integration, 403, 'Las integraciones no administran credenciales');

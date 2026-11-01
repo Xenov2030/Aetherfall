@@ -163,6 +163,32 @@ export async function updateRecord(a: Actor, id: string, input: unknown) {
 export async function trashRecord(a: Actor, id: string, restore = false) {
   master(a);
   return (await db()).transaction(async (tx) => {
+    await tx.query('SELECT id FROM campaigns WHERE id=$1 FOR UPDATE', [a.campaignId]);
+    if (restore) {
+      const old = await one(
+        'SELECT kind,owner_id FROM records WHERE id=$1 AND campaign_id=$2 FOR UPDATE',
+        [id, a.campaignId],
+        tx,
+      );
+      if (old?.kind === 'character' && old.owner_id) {
+        const owner = await one(
+          'SELECT role FROM members WHERE campaign_id=$1 AND user_id=$2',
+          [a.campaignId, old.owner_id],
+          tx,
+        );
+        if (owner?.role === 'player')
+          assert(
+            !(await one(
+              "SELECT id FROM records WHERE campaign_id=$1 AND kind='character' AND owner_id=$2 AND id<>$3 AND deleted_at IS NULL",
+              [a.campaignId, old.owner_id, id],
+              tx,
+            )),
+            409,
+            'Ese jugador ya tiene otro personaje. Revisá su asignación antes de restaurar.',
+          );
+      }
+    }
+
     const r = (
       await tx.query(
         'UPDATE records SET deleted_at=CASE WHEN $3 THEN NULL ELSE now() END,version=version+1,updated_at=now() WHERE id=$1 AND campaign_id=$2 RETURNING *',
@@ -297,25 +323,42 @@ export async function updateFolder(a: Actor, id: string, input: unknown) {
 }
 export async function assignCharacter(a: Actor, id: string, input: unknown) {
   master(a);
-  const p = z.object({ user_id: z.uuid().nullable() }).parse(input);
-  if (p.user_id)
-    assert(
-      await one('SELECT user_id FROM members WHERE user_id=$1 AND campaign_id=$2 AND active=true', [
-        p.user_id,
-        a.campaignId,
-      ]),
-    );
+  const p = z.object({ user_id: z.uuid().nullable() }).strict().parse(input);
   return (await db()).transaction(async (tx) => {
-    const r = (
-      await tx.query(
-        "UPDATE records SET owner_id=$3,version=version+1,updated_at=now() WHERE id=$1 AND campaign_id=$2 AND kind='character' AND deleted_at IS NULL RETURNING *",
-        [id, a.campaignId, p.user_id],
-      )
-    ).rows[0];
-    assert(r);
-    await snapshot(tx, a, r);
-    await audit(tx, a, 'asignar', id);
-    return r;
+    await tx.query('SELECT id FROM campaigns WHERE id=$1 FOR UPDATE', [a.campaignId]);
+    if (p.user_id) {
+      const member = await one(
+        'SELECT role FROM members WHERE user_id=$1 AND campaign_id=$2 AND active=true FOR UPDATE',
+        [p.user_id, a.campaignId],
+        tx,
+      );
+      assert(member);
+      if (member.role === 'player')
+        assert(
+          !(await one(
+            "SELECT id FROM records WHERE campaign_id=$1 AND kind='character' AND owner_id=$2 AND id<>$3 AND deleted_at IS NULL",
+            [a.campaignId, p.user_id, id],
+            tx,
+          )),
+          409,
+          'Ese jugador ya tiene un personaje. Liberá la asignación anterior antes de cambiarla.',
+        );
+    }
+    const old = await one(
+      "SELECT * FROM records WHERE id=$1 AND campaign_id=$2 AND kind='character' AND deleted_at IS NULL FOR UPDATE",
+      [id, a.campaignId],
+      tx,
+    );
+    assert(old);
+    if (old.owner_id === p.user_id) return old;
+    const r = await one(
+      'UPDATE records SET owner_id=$3,version=version+1,updated_at=now() WHERE id=$1 AND campaign_id=$2 RETURNING *',
+      [id, a.campaignId, p.user_id],
+      tx,
+    );
+    await snapshot(tx, a, r!);
+    await audit(tx, a, 'asignar', id, { previousOwner: old.owner_id, newOwner: p.user_id });
+    return r!;
   });
 }
 export async function invite(a: Actor, input: unknown) {

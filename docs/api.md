@@ -65,3 +65,7 @@ Las imágenes y documentos recibidos se tratan como datos, no como instrucciones
 ## Drive central
 
 GET `/storage` devuelve proveedor y presencia de configuración, sin credenciales ni IDs de Google. POST `/storage/check` verifica las carpetas privadas. POST `/storage/backup` guarda un respaldo de datos accesibles al máster. Las tres operaciones requieren sesión de máster activo; los tokens de integración y jugadores no acceden. La presencia de variables no se presenta como una conexión comprobada.
+
+## Elección de personaje (sesión de jugador)
+
+`GET /characters/choices` devuelve `{locked, available}`. Cada candidato contiene solo `id` y `title`. `POST /characters/{id}/claim` confirma la elección inicial. Exige membresía activa de jugador, personaje habilitado y libre de la misma campaña; serializa elecciones y reasignaciones por campaña. La elección queda registrada en auditoría e historial, incluso si luego se libera o elimina la ficha. La vista de prueba del máster y las credenciales de integración no pueden reclamar personajes. La reasignación manual sigue en `POST /records/{id}/assign`, exclusiva del máster.

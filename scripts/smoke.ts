@@ -71,6 +71,37 @@ async function main() {
       'local',
       'El servidor debe usar almacenamiento local para esta prueba',
     );
+    const choiceEmail = `eleccion-${Date.now()}@example.test`;
+    assert.equal(
+      (await api(master.context, '/invitations', 'POST', { email: choiceEmail, role: 'player' }))
+        .status,
+      201,
+    );
+    const candidate = await api(master.context, '/records', 'POST', {
+      kind: 'character',
+      title: `Elección ${Date.now()}`,
+      data: { selfSelectable: true },
+      body: 'Ficha privada',
+    });
+    assert.equal(candidate.status, 201);
+    const chooser = await login(choiceEmail);
+    await chooser.page.getByLabel('Personaje disponible').selectOption(candidate.data.id);
+    chooser.page.once('dialog', (dialog) => dialog.accept());
+    await chooser.page.getByRole('button', { name: 'Confirmar personaje', exact: true }).click();
+    await chooser.page
+      .getByText('Tu personaje está asignado. Solo el máster puede cambiar esta asignación.', {
+        exact: true,
+      })
+      .waitFor();
+    await chooser.page.reload();
+    await chooser.page
+      .getByText('Tu personaje está asignado. Solo el máster puede cambiar esta asignación.', {
+        exact: true,
+      })
+      .waitFor();
+    assert.equal(await chooser.page.getByLabel('Personaje disponible').count(), 0);
+    assert.equal((await api(chooser.context, '/overview')).data.characterSelection.locked, true);
+    await chooser.context.close();
     await master.page.getByRole('button', { name: 'Crear contenido', exact: true }).click();
     const dialog = master.page.getByRole('dialog');
     await dialog.getByLabel('Tipo', { exact: true }).selectOption('idea');
