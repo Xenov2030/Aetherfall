@@ -44,4 +44,4 @@ Completar [despliegue](despliegue.md), revisar facturación de los proveedores, 
 
 Adaptador OAuth oficial, originales privados, comprobación de carpetas y pertenencia, descargas por servidor con validación de integridad, respaldo web/CLI, comandos de autorización y preparación, y lectura compatible con archivos anteriores. Las pruebas de Drive usan transporte controlado y no demuestran acceso a la cuenta real. La autorización del usuario sigue pendiente; ver [pasos exactos](google-drive.md).
 
-Validación adicional de Drive: 9 pruebas con transporte controlado de privacidad, originales, referencias y errores; 34 pruebas totales del comando `npm test`. La conexión real no está validada.
+Validación adicional de Drive: 9 pruebas con transporte controlado de privacidad, originales, referencias y errores, más 2 del asistente OAuth; 36 pruebas totales del comando `npm test`. La conexión real no está validada.
