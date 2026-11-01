@@ -18,13 +18,17 @@ async function main() {
     args: ['--no-sandbox'],
   });
   const errors: string[] = [];
-  async function login(email: string, viewport = { width: 1440, height: 1000 }) {
+  async function login(
+    email: string,
+    viewport = { width: 1440, height: 1000 },
+    loginPath = '/login',
+  ) {
     const context = await browser.newContext({ viewport });
     const page = await context.newPage();
     page.on('pageerror', (e) => errors.push(e.message));
     const file = path.join(process.cwd(), '.local/mail', `${email}.eml`);
     await unlink(file).catch(() => {});
-    await page.goto(`${origin}/login`);
+    await page.goto(`${origin}${loginPath}`);
     await page.getByLabel('Correo electrónico').fill(email);
     await page.getByRole('button', { name: 'Recibir enlace de acceso' }).click();
     let raw = '';
@@ -72,11 +76,14 @@ async function main() {
       'El servidor debe usar almacenamiento local para esta prueba',
     );
     const choiceEmail = `eleccion-${Date.now()}@example.test`;
-    assert.equal(
-      (await api(master.context, '/invitations', 'POST', { email: choiceEmail, role: 'player' }))
-        .status,
-      201,
-    );
+    await master.page.getByRole('button', { name: 'Campaña', exact: true }).click();
+    await master.page
+      .getByRole('button', { name: 'Obtener enlace para jugadores', exact: true })
+      .click();
+    const shareInput = master.page.getByLabel('Enlace para compartir', { exact: true });
+    await shareInput.waitFor();
+    const sharedPath = (await shareInput.inputValue()).replace(origin, '');
+    await master.page.getByRole('button', { name: 'Inicio', exact: true }).click();
     const candidate = await api(master.context, '/records', 'POST', {
       kind: 'character',
       title: `Elección ${Date.now()}`,
@@ -84,7 +91,7 @@ async function main() {
       body: 'Ficha privada',
     });
     assert.equal(candidate.status, 201);
-    const chooser = await login(choiceEmail);
+    const chooser = await login(choiceEmail, undefined, sharedPath);
     await chooser.page.getByLabel('Personaje disponible').selectOption(candidate.data.id);
     chooser.page.once('dialog', (dialog) => dialog.accept());
     await chooser.page.getByRole('button', { name: 'Confirmar personaje', exact: true }).click();
@@ -399,7 +406,7 @@ async function main() {
     await master.page.getByRole('dialog').waitFor({ state: 'hidden' });
     assert.deepEqual(errors, [], 'Sin errores de JavaScript en el navegador');
     console.log(
-      'E2E_OK: acceso por correo de un uso, creación desde UI, dos jugadores, permisos API/adjuntos/búsqueda, ficha persistente, conflictos, CSRF, vista personaje, revocación, exportación, dados, bitácoras, correspondencia, compras atómicas, credenciales revocables y celular.',
+      'E2E_OK: ingreso por enlace compartido sin registrar correos, elección única persistente, acceso por correo de un uso, creación desde UI, dos jugadores, permisos API/adjuntos/búsqueda, ficha persistente, conflictos, CSRF, vista personaje, revocación, exportación, dados, bitácoras, correspondencia, compras atómicas, credenciales revocables y celular.',
     );
     await Promise.all([master.context.close(), p1.context.close(), p2.context.close()]);
   } finally {

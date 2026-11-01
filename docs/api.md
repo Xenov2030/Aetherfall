@@ -69,3 +69,9 @@ GET `/storage` devuelve proveedor y presencia de configuración, sin credenciale
 ## Elección de personaje (sesión de jugador)
 
 `GET /characters/choices` devuelve `{locked, available}`. Cada candidato contiene solo `id` y `title`. `POST /characters/{id}/claim` confirma la elección inicial. Exige membresía activa de jugador, personaje habilitado y libre de la misma campaña; serializa elecciones y reasignaciones por campaña. La elección queda registrada en auditoría e historial, incluso si luego se libera o elimina la ficha. La vista de prueba del máster y las credenciales de integración no pueden reclamar personajes. La reasignación manual sigue en `POST /records/{id}/assign`, exclusiva del máster.
+
+## Admisión mediante enlace compartido
+
+El máster obtiene el enlace con `POST /join-link` (`{}`); `{ "renew": true }` reemplaza la generación anterior. Devuelve `path` y `expires`. El enlace está firmado con HMAC, dura 30 días y se registra en auditoría sin nuevas migraciones. Las integraciones y jugadores no pueden generarlo.
+
+`POST /api/join` recibe `{campaign, token, email}` desde el formulario de acceso, exige mismo origen y limita solicitudes por IP y correo. Un enlace válido prepara una invitación de jugador de 30 minutos; la membresía se crea después de verificar el correo con Auth.js. No permite reactivar miembros suspendidos ni modificar su elección de personaje. Renovar el enlace impide nuevas solicitudes con el anterior; las invitaciones y los accesos ya emitidos mantienen su vencimiento.

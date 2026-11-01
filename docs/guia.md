@@ -16,11 +16,11 @@
 
 **Compras y tesoro.** Primero configurá las denominaciones, si querés registrarlas. Definí nombre y propiedades conocidas del producto separados de sus notas privadas. Revelá productos y precio ofrecido a cada personaje. El jugador solicita; el máster puede negociar el precio final y confirmar o rechazar. Confirmar verifica saldo, stock y permiso, descuenta y entrega una sola vez. Entregas, transferencias y consumo son acciones explícitas del máster. El fondo común y el reparto grupal tienen pendientes específicos; no se simulan.
 
-**Invitar.** Registrá el correo real y el rol en Campaña. La invitación vence a los siete días. Compartí personalmente la dirección de acceso; no se envía un mensaje al crear la invitación. Cuando la persona use su enlace de acceso, se asigna su membresía y puede elegir un personaje disponible una sola vez. Después solo el máster puede cambiar la asignación desde el selector de propietario de la ficha. Para cambiarlo, liberá primero la asignación anterior. Desactivar conserva personajes e historia. No podés desactivar tu propio acceso desde esa acción.
+**Invitar sin registrar correos.** En Campaña, pulsá «Obtener enlace para jugadores» y «Copiar enlace». Compartilo con el grupo. Cada persona ingresa su propio correo, confirma el enlace de acceso recibido y elige un personaje disponible una sola vez. El enlace compartido dura 30 días; «Renovar enlace» reemplaza el anterior para nuevas solicitudes, sin eliminar miembros ni solicitudes de acceso ya emitidas. Entrarán como jugadores. La invitación individual por correo queda como opción para casos puntuales, incluido dar acceso de máster. Desactivar a alguien conserva sus personajes e historia y el enlace compartido no permite reactivar su membresía.
 
 ## Jugador
 
-Ingresá con el correo que invitó tu máster. Los enlaces duran 15 minutos y solo sirven una vez. Para recuperar acceso, solicitá otro; si perdiste tu correo, hablá con el máster.
+Abrí el enlace de invitación que te compartió tu máster e ingresá tu propio correo. Para volver después, podés usar la página de acceso habitual con ese mismo correo. Los enlaces duran 15 minutos y solo sirven una vez. Para recuperar acceso, solicitá otro; si perdiste tu correo, hablá con el máster.
 
 Tu Inicio muestra tus personajes y fragmentos autorizados. No ves títulos ni actividad de contenido ajeno. El origen del conocimiento distingue lo vivido, leído, recibido o contado. Las fichas no se comparten con otros jugadores por defecto.
 

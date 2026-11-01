@@ -17,6 +17,7 @@ import * as service from '@/lib/service';
 import { validateFile, putObject, readObject, signedObject, proxyObject } from '@/lib/storage';
 import { exportCampaign } from '@/lib/backup';
 import { storageStatus, checkDrive, backupToDrive } from '@/lib/drive-backup';
+import { joinLink } from '@/lib/join-links';
 import { characterChoices, claimCharacter } from '@/lib/character-selection';
 import * as community from '@/lib/community';
 import * as commerce from '@/lib/commerce';
@@ -161,6 +162,13 @@ async function dispatch(req: NextRequest, { params }: { params: Promise<{ path: 
         threadCount: (await community.threads(a)).length,
         rolls,
       });
+    }
+    if (section === 'join-link' && method === 'POST') {
+      const input = z
+        .object({ renew: z.boolean().optional() })
+        .strict()
+        .parse(await body(req));
+      return json(await joinLink(a, input.renew));
     }
     if (section === 'characters') {
       if (method === 'GET' && id === 'choices') return json(await characterChoices(a));

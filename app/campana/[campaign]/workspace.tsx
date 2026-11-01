@@ -2077,13 +2077,58 @@ function SettingsPanel({
   run: (a: () => Promise<unknown>, m?: string) => Promise<boolean>;
   base: string;
 }) {
+  const [link, setLink] = useState('');
   const [email, setEmail] = useState(''),
     [role, setRole] = useState('player');
   return (
     <>
       <div className="settings-grid">
         <section className="panel padded">
-          <h2>Invitar a la campaña</h2>
+          <h2>Invitar con un enlace</h2>
+          <p>
+            Compartí este enlace con tus jugadores. Cada uno ingresa su propio correo, confirma el
+            acceso y elige un personaje una sola vez. No necesitás registrar sus correos.
+          </p>
+          <button
+            className="button primary"
+            onClick={() =>
+              run(async () => {
+                const result = await request('/join-link', 'POST', {});
+                setLink(window.location.origin + result.path);
+              })
+            }
+          >
+            Obtener enlace para jugadores
+          </button>
+          {link && (
+            <>
+              <Field label="Enlace para compartir">
+                <input readOnly value={link} onFocus={(e) => e.target.select()} />
+              </Field>
+              <button
+                className="button"
+                onClick={() => run(() => navigator.clipboard.writeText(link), 'Enlace copiado')}
+              >
+                Copiar enlace
+              </button>
+              <button
+                className="button"
+                onClick={() =>
+                  run(async () => {
+                    const result = await request('/join-link', 'POST', { renew: true });
+                    setLink(window.location.origin + result.path);
+                  }, 'Enlace renovado. El anterior ya no admite nuevas solicitudes.')
+                }
+              >
+                Renovar enlace
+              </button>
+            </>
+          )}
+          <p className="muted">
+            Válido por 30 días. Quien reciba el enlace puede entrar como jugador. Renovarlo no
+            elimina miembros ni accesos ya solicitados.
+          </p>
+          <h3 className="spaced">Invitación individual opcional</h3>
           <p className="muted">
             La invitación habilita el correo durante 7 días. No se envía ningún mensaje al crearla.
             Compartí personalmente la dirección de acceso.

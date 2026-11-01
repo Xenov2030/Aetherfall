@@ -662,3 +662,45 @@ test('Elección única: privacidad, concurrencia y cambios exclusivos del máste
   await assert.rejects(claimCharacter({ ...b, preview: true }, shared.id));
   await assert.rejects(claimCharacter(master, shared.id));
 });
+
+test('Enlace compartido admite jugadores con correo verificado, caduca, rota y respeta suspensión', async () => {
+  process.env.NEXTAUTH_SECRET ||= randomUUID();
+  const { joinLink, registerFromLink } = await import('../lib/join-links');
+  await assert.rejects(joinLink(p1));
+  const first = await joinLink(master);
+  assert.equal((await joinLink(master)).path, first.path);
+  const params = new URL(first.path, 'https://example.test').searchParams;
+  const input = {
+    campaign: DEMO,
+    token: params.get('invitacion')!,
+    email: `join-${randomUUID()}@example.test`,
+  };
+  assert.equal(await loginAllowed(input.email), false);
+  await registerFromLink(input);
+  assert.equal(await loginAllowed(input.email), true);
+  const invitation = await one('SELECT role FROM invitations WHERE campaign_id=$1 AND email=$2', [
+    DEMO,
+    input.email,
+  ]);
+  assert.equal(invitation!.role, 'player');
+  assert.equal(await one('SELECT id FROM users WHERE email=$1', [input.email]), undefined);
+  const id = randomUUID();
+  await (await db()).query('INSERT INTO users(id,email) VALUES($1,$2)', [id, input.email]);
+  await acceptInvitations(id, input.email);
+  assert.equal((await actorFor(id, DEMO)).role, 'player');
+  await setMember(master, id, false);
+  await assert.rejects(registerFromLink(input));
+  await assert.rejects(registerFromLink({ ...input, token: input.token.slice(0, -1) + '!' }));
+  await assert.rejects(registerFromLink({ ...input, campaign: randomUUID() }));
+  const next = await joinLink(master, true);
+  assert.notEqual(next.path, first.path);
+  await assert.rejects(registerFromLink({ ...input, email: `new-${randomUUID()}@example.test` }));
+  const nextParams = new URL(next.path, 'https://example.test').searchParams;
+  const token = nextParams.get('invitacion')!;
+  await (
+    await db()
+  ).query("UPDATE audit SET details=jsonb_set(details,'{expires}','0') WHERE id=$1", [
+    token.split('.')[0],
+  ]);
+  await assert.rejects(registerFromLink({ ...input, token }));
+});

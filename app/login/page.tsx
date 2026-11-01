@@ -1,17 +1,35 @@
 'use client';
 import { signIn } from 'next-auth/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 export default function Login() {
   const [email, setEmail] = useState(''),
     [sent, setSent] = useState(false),
     [busy, setBusy] = useState(false),
     [error, setError] = useState('');
+  const [invitation, setInvitation] = useState<{ campaign: string; token: string } | null>(null);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const campaign = params.get('campana'),
+      token = params.get('invitacion');
+    if (campaign && token) setInvitation({ campaign, token });
+  }, []);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError('');
     try {
+      if (invitation) {
+        const response = await fetch('/api/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...invitation, email: email.trim().toLowerCase() }),
+        });
+        if (!response.ok) {
+          setError((await response.json()).error);
+          return;
+        }
+      }
       const r = await signIn('email', { email, callbackUrl: '/inicio', redirect: false });
       if (r?.error)
         setError('No se pudo solicitar el acceso. Verificá tu invitación o consultá al máster.');
@@ -32,12 +50,14 @@ export default function Login() {
         <p className="eyebrow">UN UMBRAL ENTRE HISTORIAS</p>
         <h1>Volvé a tu aventura.</h1>
         <p>
-          Ingresá el correo de tu invitación. Te enviaremos un enlace de un solo uso, válido durante
-          15 minutos.
+          {invitation
+            ? 'Unite a la campaña con tu propio correo. Después podrás elegir tu personaje una sola vez.'
+            : 'Ingresá tu correo para volver a tu campaña. Si sos nuevo, usá el enlace de invitación que te compartió el máster.'}{' '}
+          Te enviaremos un enlace de acceso de un solo uso, válido durante 15 minutos.
         </p>
         {sent ? (
           <div role="status" className="notice">
-            Solicitud procesada. Si tu invitación está vigente y el correo está configurado,
+            Solicitud procesada. Si el acceso está habilitado y el correo está configurado,
             recibirás el enlace. Revisá también la carpeta de spam.
             <button className="button" onClick={() => setSent(false)}>
               Usar otro correo
