@@ -1,0 +1,1 @@
+CREATE TABLE integration_tokens (id uuid PRIMARY KEY, campaign_id uuid NOT NULL REFERENCES campaigns, user_id uuid NOT NULL REFERENCES users, name text NOT NULL, token_hash text NOT NULL UNIQUE, scopes text[] NOT NULL, revoked_at timestamptz, created_at timestamptz NOT NULL DEFAULT now());

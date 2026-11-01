@@ -1,0 +1,62 @@
+{
+  "name": "aetherfall",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0",
+    "build": "next build --webpack",
+    "start": "next start --hostname 0.0.0.0",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test --test-concurrency=1 tests/*.test.ts",
+    "db:migrate": "node --env-file-if-exists=.env.local --import tsx scripts/migrate.ts",
+    "db:seed": "node --env-file-if-exists=.env.local --import tsx scripts/seed.ts",
+    "bootstrap": "node --env-file-if-exists=.env.local --import tsx scripts/bootstrap.ts",
+    "backup": "node --env-file-if-exists=.env.local --import tsx scripts/backup.ts",
+    "restore": "node --env-file-if-exists=.env.local --import tsx scripts/restore.ts",
+    "mail:local": "node --env-file-if-exists=.env.local --import tsx scripts/local-mail.ts",
+    "local:setup": "node --env-file-if-exists=.env.local --import tsx scripts/local-setup.ts",
+    "test:e2e": "node --env-file=.env.local --import tsx scripts/smoke.ts",
+    "db:local": "node --env-file=.env.local --import tsx scripts/local-postgres.ts",
+    "test:postgres": "node --env-file=.env.local --import tsx scripts/native-tests.ts",
+    "local:prepare": "node --env-file=.env.local --import tsx scripts/prepare-local.ts",
+    "format": "prettier --write app components lib scripts tests docs README.md next.config.ts tsconfig.json package.json",
+    "format:check": "prettier --check app components lib scripts tests docs README.md next.config.ts tsconfig.json package.json",
+    "drive:authorize": "node --env-file-if-exists=.env.local --import tsx scripts/drive-authorize.ts",
+    "drive:setup": "node --env-file-if-exists=.env.local --import tsx scripts/drive-setup.ts",
+    "backup:drive": "node --env-file-if-exists=.env.local --import tsx scripts/backup-drive.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.1161.0",
+    "@aws-sdk/s3-request-presigner": "3.1161.0",
+    "@electric-sql/pglite": "0.5.14",
+    "google-auth-library": "11.3.2",
+    "lucide-react": "^0.577.0",
+    "next": "16.4.3",
+    "next-auth": "4.24.15",
+    "nodemailer": "10.3.1",
+    "pg": "^8.16.3",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.10.0",
+    "@types/nodemailer": "^7.0.3",
+    "@types/pg": "^8.15.6",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/smtp-server": "^3.5.12",
+    "embedded-postgres": "18.6.0-beta.19",
+    "prettier": "3.9.10",
+    "smtp-server": "^3.16.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "overrides": {
+    "nodemailer": "$nodemailer"
+  }
+}
