@@ -1310,7 +1310,7 @@ function DetailDrawer({
       if (attachmentFragment) form.set('fragment_id', attachmentFragment);
       if (
         !(await run(async () => {
-          if (file.size > MAX_FILE_BYTES) throw new Error('El archivo no puede superar los 10 MB');
+          if (file.size > MAX_FILE_BYTES) throw new Error('El archivo no puede superar los 15 MB');
           if (file.size <= UPLOAD_CHUNK_BYTES) return request('/attachments', 'POST', form);
           const session = await request('/uploads', 'POST', {
             record_id: r.id,
@@ -1861,14 +1861,14 @@ function DetailDrawer({
           <>
             <p className="notice">
               {canManage
-                ? 'Los archivos privados no aparecen a jugadores. Para compartir uno, adjuntalo a un fragmento y revelá ese fragmento. Máximo 10 MB por archivo.'
+                ? 'Los archivos privados no aparecen a jugadores. Para compartir uno, adjuntalo a un fragmento y revelá ese fragmento. Máximo 15 MB por archivo.'
                 : 'Las descargas requieren autorización en el servidor. Si se usa S3, sus enlaces temporales caducan en 60 segundos.'}
             </p>
             {canManage && (
               <div className="upload-box">
                 <Upload size={26} />
                 <h3>Conservá el original</h3>
-                <p>PNG, JPG, WebP, PDF o texto · Hasta 10 MB</p>
+                <p>PNG, JPG, WebP, PDF o texto · Hasta 15 MB</p>
                 <Field label="Visibilidad del archivo">
                   <select
                     value={attachmentFragment}

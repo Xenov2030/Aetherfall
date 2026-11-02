@@ -30,7 +30,7 @@ export function validateFile(data: Buffer, mime: string) {
   assert(
     data.length > 0 && data.length <= MAX_FILE_BYTES,
     400,
-    'El archivo debe pesar entre 1 byte y 10 MB',
+    'El archivo debe pesar entre 1 byte y 15 MB',
   );
   const valid =
     mime === 'application/pdf'

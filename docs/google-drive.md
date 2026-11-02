@@ -65,7 +65,7 @@ En este entorno de nube se solicitaron en el borrador de configuración los dest
 - Una descarga nueva requiere permisos vigentes. Retirar acceso no borra copias ya descargadas.
 - Compartir, mover o borrar archivos directamente en Drive puede dejar el original indisponible. Si una carpeta o archivo fue compartido en Drive, el adaptador lo rechaza. Esto no puede deshacer accesos que el dueño haya concedido por fuera de Aetherfall: mantené estas carpetas privadas.
 - El servidor comprueba que el archivo esté en la carpeta esperada y tenga la marca de Aetherfall. Antes de entregarlo compara tamaño y SHA-256 con el original registrado: una edición externa no se publica silenciosamente.
-- Se conserva el nombre y los bytes del original. Se admiten hasta 10 MB por archivo; la interfaz envía las cargas grandes en partes y el servidor conserva el original completo en Drive.
+- Se conserva el nombre y los bytes del original. Se admiten hasta 15 MB por archivo; la interfaz envía las cargas grandes en partes y el servidor conserva el original completo en Drive.
 - Las referencias antiguas locales/S3 se conservan; cambiar proveedor no borra ni mueve nada automáticamente. Un respaldo con originales puede restaurarse en otro almacenamiento y reasigna las referencias al destino.
 
 ## Respaldos en Drive

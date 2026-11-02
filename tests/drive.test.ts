@@ -100,7 +100,7 @@ test('Drive: rechaza archivos ajenos, compartidos, en papelera o fuera de la car
   }
 });
 test('Drive: valida identificadores, tamaño y cambios durante la descarga', async () => {
-  const f = fake({ file: { size: String(11 * 1024 * 1024) } });
+  const f = fake({ file: { size: String(16 * 1024 * 1024) } });
   await assert.rejects(new GoogleDriveStore(f.transport, folder).download(`drive:${file}`), {
     status: 413,
   });
@@ -187,8 +187,8 @@ test('Compatibilidad: una referencia S3 explícita conserva su proveedor incluso
   assert((await readObject(ref)).equals(bytes));
 });
 
-test('Drive: admite originales de 10 MB completos al subir y descargar', async () => {
-  const bytes = Buffer.alloc(10 * 1024 * 1024, 19);
+test('Drive: admite originales de 15 MB completos al subir y descargar', async () => {
+  const bytes = Buffer.alloc(15 * 1024 * 1024, 19);
   bytes.set([255, 216, 255]);
   const f = fake({ bytes });
   const store = new GoogleDriveStore(f.transport, folder);

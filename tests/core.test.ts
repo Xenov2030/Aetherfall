@@ -174,7 +174,7 @@ test('Los adjuntos privados, originales y de fragmentos requieren la misma autor
 test('Rechaza tipos falsificados, SVG y archivos excesivos', () => {
   assert.throws(() => validateFile(Buffer.from('<svg onload=alert(1)>'), 'image/png'));
   assert.throws(() => validateFile(Buffer.from('<svg/>'), 'image/svg+xml'));
-  assert.throws(() => validateFile(Buffer.alloc(10 * 1024 * 1024 + 1), 'text/plain'));
+  assert.throws(() => validateFile(Buffer.alloc(15 * 1024 * 1024 + 1), 'text/plain'));
 });
 test('Edición de fichas con lista de campos, persistencia, historial y conflictos de versión', async () => {
   const before = await readRecord(master, char1);
@@ -705,7 +705,7 @@ test('Enlace compartido admite jugadores con correo verificado, caduca, rota y r
   await assert.rejects(registerFromLink({ ...input, token }));
 });
 
-test('Imágenes de 10 MB: partes privadas, límites, permisos y bytes originales', async () => {
+test('Imágenes de 15 MB: partes privadas, límites, permisos y bytes originales', async () => {
   const { startUpload, appendUpload, finishUpload, cancelUpload } =
     await import('../lib/large-upload');
   const { MAX_FILE_BYTES, UPLOAD_CHUNK_BYTES } = await import('../lib/upload-limits');

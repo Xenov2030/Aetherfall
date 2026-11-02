@@ -124,17 +124,17 @@ async function main() {
     await master.page.getByText(title, { exact: true }).click();
     const fileDrawer = master.page.getByRole('dialog');
     await fileDrawer.getByRole('button', { name: /Adjuntos/ }).click();
-    const largeImage = Buffer.alloc(10 * 1024 * 1024, 0);
+    const largeImage = Buffer.alloc(15 * 1024 * 1024, 0);
     Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aN1cAAAAASUVORK5CYII=',
       'base64',
     ).copy(largeImage);
     await fileDrawer
       .locator('input[type=file]')
-      .setInputFiles({ name: 'imagen-10mb.png', mimeType: 'image/png', buffer: largeImage });
-    await fileDrawer.getByText('imagen-10mb.png', { exact: true }).waitFor({ timeout: 60000 });
+      .setInputFiles({ name: 'imagen-15mb.png', mimeType: 'image/png', buffer: largeImage });
+    await fileDrawer.getByText('imagen-15mb.png', { exact: true }).waitFor({ timeout: 60000 });
     const imageUrl = await fileDrawer
-      .getByRole('img', { name: 'imagen-10mb.png', exact: true })
+      .getByRole('img', { name: 'imagen-15mb.png', exact: true })
       .getAttribute('src');
     assert(imageUrl);
     const downloaded = await master.context.request.get(origin + imageUrl);
