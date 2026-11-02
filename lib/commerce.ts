@@ -1,3 +1,4 @@
+import { DND_CURRENCIES } from './currency';
 import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { db, one, type DB } from './db';
@@ -70,7 +71,14 @@ export async function commerce(a: Actor) {
       [a.campaignId, ids],
     )
   ).rows;
-  return { currencies, wallets, inventory, products, purchases, movements };
+  return {
+    currencies: currencies.length ? currencies : DND_CURRENCIES,
+    wallets,
+    inventory,
+    products,
+    purchases,
+    movements,
+  };
 }
 export async function createCurrency(a: Actor, input: unknown) {
   master(a);

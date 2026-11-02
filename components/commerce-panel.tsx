@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
+import { formatMoney, toBaseMoney, type Currency } from '@/lib/currency';
 import { Plus, Coins, Package, Store, Eye, Check, X, ArrowRightLeft } from 'lucide-react';
 type R = Record<string, any>;
 type Props = {
@@ -61,8 +62,10 @@ export default function CommercePanel({ request, run, characters, master, readOn
                 <div>
                   <strong>{c.title}</strong>
                   <small>
-                    {data.wallets.find((w: R) => w.character_id === c.id)?.balance ?? '0'} unidades
-                    base
+                    {formatMoney(
+                      data.wallets.find((w: R) => w.character_id === c.id)?.balance ?? '0',
+                      data.currencies,
+                    )}
                   </small>
                 </div>
               </div>
@@ -72,7 +75,10 @@ export default function CommercePanel({ request, run, characters, master, readOn
             Monedas:{' '}
             {data.currencies.length
               ? data.currencies
-                  .map((c: R) => `${c.name} (${c.symbol}) = ${c.base_units} unidades base`)
+                  .map(
+                    (c: R) =>
+                      `${c.name} (${c.symbol}) = ${c.base_units} ${data.currencies.find((v: R) => v.base_units === '1')?.symbol || 'unidades base'}`,
+                  )
                   .join(' · ')
               : 'sin denominaciones configuradas. No se presupone ninguna conversión.'}
           </p>
@@ -95,6 +101,7 @@ export default function CommercePanel({ request, run, characters, master, readOn
           )}
           {form && (
             <CommerceForm
+              currencies={data.currencies}
               kind={form}
               selected={selected}
               characters={characters}
@@ -159,7 +166,9 @@ export default function CommercePanel({ request, run, characters, master, readOn
                       <p className="notice">Privado: {p.private_notes}</p>
                     )}
                     <div className="product-meta">
-                      <span>{master ? p.base_price : p.offered_price} unidades base</span>
+                      <span>
+                        {formatMoney(master ? p.base_price : p.offered_price, data.currencies)}
+                      </span>
                       <span>{master ? `${p.stock} en stock` : p.availability}</span>
                     </div>
                     {master ? (
@@ -205,8 +214,8 @@ export default function CommercePanel({ request, run, characters, master, readOn
                         {p.known_name} ×{p.quantity}
                       </strong>
                       <small>
-                        {characters.find((c) => c.id === p.character_id)?.title} · {p.unit_price}{' '}
-                        unidades por objeto
+                        {characters.find((c) => c.id === p.character_id)?.title} ·{' '}
+                        {formatMoney(p.unit_price, data.currencies)} por objeto
                       </small>
                     </div>
                     <span className="tag">{p.state}</span>
@@ -249,7 +258,7 @@ export default function CommercePanel({ request, run, characters, master, readOn
                     </span>
                     <span>
                       {m.amount !== '0'
-                        ? `${m.amount} unidades base`
+                        ? formatMoney(m.amount, data.currencies)
                         : m.quantity
                           ? `${m.quantity} objetos`
                           : ''}
@@ -265,18 +274,22 @@ export default function CommercePanel({ request, run, characters, master, readOn
   );
 }
 function CommerceForm({
+  currencies,
   kind,
   selected,
   characters,
   close,
   save,
 }: {
+  currencies: Currency[];
   kind: string;
   selected: R | null;
   characters: R[];
   close: () => void;
   save: (path: string, p: R, message?: string) => Promise<void>;
 }) {
+  const [moneyError, setMoneyError] = useState('');
+  const [denominations, setDenominations] = useState<Record<string, string>>({});
   const [p, setP] = useState<R>({
       character_id: selected?.character_id ?? characters[0]?.id ?? '',
       name: '',
@@ -323,15 +336,38 @@ function CommerceForm({
       />
     </label>
   );
+  const selectedUnits = (key: string) => denominations[key] || '1';
+  const moneyInput = (key: string, label: string) => (
+    <div className="form-grid">
+      {text(key, label)}
+      <label>
+        Moneda para {label.toLowerCase()}
+        <select
+          aria-label={`Moneda para ${label.toLowerCase()}`}
+          value={selectedUnits(key)}
+          onChange={(e) => setDenominations((s) => ({ ...s, [key]: e.target.value }))}
+        >
+          {!currencies.some((c) => c.base_units === '1') && <option value="1">Unidad base</option>}
+          {currencies.map((c) => (
+            <option key={c.symbol} value={c.base_units}>
+              {c.name} ({c.symbol})
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+  const converted = (key: string) => toBaseMoney(p[key], selectedUnits(key));
   async function submit(revoke = false) {
     setWorking(true);
+    setMoneyError('');
     try {
       if (kind === 'currency')
         await save('currencies', { name: p.name, symbol: p.symbol, base_units: p.base_units });
       if (kind === 'wallet')
         await save('wallets', {
           character_id: p.character_id,
-          amount: p.amount,
+          amount: converted('amount'),
           idempotency_key: key,
         });
       if (kind === 'delivery')
@@ -351,14 +387,14 @@ function CommerceForm({
           description: p.description,
           private_notes: p.private_notes,
           stock: p.stock,
-          base_price: p.base_price,
+          base_price: converted('base_price'),
         });
       if (kind === 'catalog')
         await save(
           `catalog/${selected!.id}`,
           {
             characters: p.characters,
-            offered_price: p.offered_price,
+            offered_price: converted('offered_price'),
             stock_visibility: p.stock_visibility,
             revoke,
           },
@@ -380,7 +416,7 @@ function CommerceForm({
       if (kind === 'confirm')
         await save(
           `purchases/${selected!.id}`,
-          { unit_price: p.unit_price },
+          { unit_price: converted('unit_price') },
           'Compra confirmada: monedas, existencias y entrega registradas',
         );
       if (kind === 'transfer')
@@ -393,6 +429,8 @@ function CommerceForm({
           },
           p.to_character_id ? 'Transferencia registrada' : 'Consumo registrado',
         );
+    } catch (error) {
+      setMoneyError(error instanceof Error ? error.message : 'Revisá el importe');
     } finally {
       setWorking(false);
     }
@@ -405,6 +443,11 @@ function CommerceForm({
         submit();
       }}
     >
+      {moneyError && (
+        <p className="error" role="alert">
+          {moneyError}
+        </p>
+      )}
       <div className="section-title compact">
         <h2>{titles[kind]}</h2>
         <button
@@ -419,7 +462,11 @@ function CommerceForm({
       {['wallet', 'delivery'].includes(kind) && (
         <label>
           Personaje
-          <select value={p.character_id} onChange={(e) => set('character_id', e.target.value)}>
+          <select
+            aria-label="Personaje"
+            value={p.character_id}
+            onChange={(e) => set('character_id', e.target.value)}
+          >
             {characters.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.title}
@@ -437,7 +484,7 @@ function CommerceForm({
       )}
       {kind === 'wallet' && (
         <>
-          {text('amount', 'Ajuste en unidades base (negativo para descontar)')}
+          {moneyInput('amount', 'Ajuste (negativo para descontar)')}
           <p className="muted">No se permiten saldos negativos.</p>
         </>
       )}
@@ -457,7 +504,7 @@ function CommerceForm({
           {text('description', 'Descripción visible')}
           {text('private_notes', 'Notas secretas')}
           {text('stock', 'Existencias reales', 'number')}
-          {text('base_price', 'Precio base en unidades enteras')}
+          {moneyInput('base_price', 'Precio base')}
         </>
       )}
       {kind === 'catalog' && (
@@ -483,7 +530,7 @@ function CommerceForm({
               </label>
             ))}
           </fieldset>
-          {text('offered_price', 'Precio ofrecido en unidades base')}
+          {moneyInput('offered_price', 'Precio ofrecido')}
           <label>
             Cómo mostrar existencias
             <select
@@ -508,7 +555,8 @@ function CommerceForm({
       {kind === 'purchase' && (
         <>
           <p>
-            {selected?.known_name} · {selected?.offered_price} unidades base por objeto
+            {selected?.known_name} · {formatMoney(selected?.offered_price || '0', currencies)} por
+            objeto
           </p>
           {text('quantity', 'Cantidad solicitada', 'number')}
         </>
@@ -518,7 +566,7 @@ function CommerceForm({
           <p>
             {selected?.known_name} ×{selected?.quantity}
           </p>
-          {text('unit_price', 'Precio final negociado por unidad')}
+          {moneyInput('unit_price', 'Precio final negociado por unidad')}
           <p className="notice">
             Se comprobarán el saldo, la autorización y las existencias. Confirmar dos veces la misma
             compra no duplica la entrega.

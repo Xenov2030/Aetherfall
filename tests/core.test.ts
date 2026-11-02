@@ -338,6 +338,10 @@ test('Correspondencia: borrador invisible, remitente real privado, conversación
   });
 });
 test('Productos y dinero: ninguna mercancía privada se filtra; conversión exacta sin flotantes', async () => {
+  assert.deepEqual(
+    (await commerce.commerce(master)).currencies.map((c) => c.name),
+    ['Platino', 'Oro', 'Plata', 'Cobre'],
+  );
   const coin = await commerce.createCurrency(master, {
     name: 'Moneda ficticia',
     symbol: 'mf',

@@ -147,6 +147,32 @@ async function main() {
     const char1 = ov.data.characters.find((r: any) => r.title === 'Lira del Umbral');
     const char2 = ov.data.characters.find((r: any) => r.title === 'Bruno de la Bruma');
     assert(char1 && char2);
+    const previousMoney = await api(master.context, '/commerce');
+    const previousBalance = BigInt(
+      previousMoney.data.wallets.find((w: any) => w.character_id === char1.id)?.balance || '0',
+    );
+    assert.deepEqual(
+      previousMoney.data.currencies.map((c: any) => c.name),
+      ['Platino', 'Oro', 'Plata', 'Cobre'],
+    );
+    await master.page.getByRole('button', { name: 'Inventario y tiendas', exact: true }).click();
+    await master.page.getByRole('button', { name: 'Ajustar monedas', exact: true }).click();
+    await master.page.getByLabel('Personaje', { exact: true }).selectOption(char1.id);
+    await master.page.getByLabel('Ajuste (negativo para descontar)', { exact: true }).fill('1');
+    await master.page
+      .getByLabel('Moneda para ajuste (negativo para descontar)', { exact: true })
+      .selectOption('100');
+    await master.page.getByRole('button', { name: 'Guardar', exact: true }).click();
+    await master.page
+      .getByRole('heading', { name: 'Ajustar saldo', exact: true })
+      .waitFor({ state: 'hidden' });
+    const updatedMoney = await api(master.context, '/commerce');
+    assert.equal(
+      BigInt(updatedMoney.data.wallets.find((w: any) => w.character_id === char1.id).balance),
+      previousBalance + 100n,
+    );
+    await master.page.getByRole('button', { name: 'Inicio', exact: true }).click();
+
     const secret = await api(master.context, '/records', 'POST', {
       kind: 'lore',
       title: 'El secreto del farero',
