@@ -4,6 +4,7 @@ import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { localMode } from './db';
 import { assert } from './errors';
+import { MAX_FILE_BYTES } from './upload-limits';
 import { filesDrive } from './google-drive';
 const root = () =>
   path.join(process.env.AETHERFALL_LOCAL_DIR || path.join(process.cwd(), '.local'), 'objects');
@@ -27,9 +28,9 @@ function s3() {
 }
 export function validateFile(data: Buffer, mime: string) {
   assert(
-    data.length > 0 && data.length <= 3 * 1024 * 1024,
+    data.length > 0 && data.length <= MAX_FILE_BYTES,
     400,
-    'El archivo debe pesar entre 1 byte y 3 MB',
+    'El archivo debe pesar entre 1 byte y 10 MB',
   );
   const valid =
     mime === 'application/pdf'

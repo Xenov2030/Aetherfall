@@ -4,7 +4,7 @@
 
 **Antes de jugar.** Abrí Inicio, prepará la sesión, completá introducción, cierre y el punto de retorno por separado. Un cierre puede quedar a mitad de una escena. Asigná propietarios a las fichas en su detalle; habilitá solo la edición de notas o recursos que quieras delegar. La hoja de papel sigue siendo válida y ningún contador digital es obligatorio.
 
-**Organizar.** En Archivo, creá carpetas y entradas. Los originales se adjuntan al abrir una entrada en Adjuntos. Admitimos PNG, JPG, WebP, PDF y texto, hasta 3 MB cada uno. Los PDF abren una vista autorizada en otra pestaña; las imágenes tienen vista previa. Mover una entrada, vincularla a una sesión o renombrar su carpeta nunca la publica.
+**Organizar.** En Archivo, creá carpetas y entradas. Los originales se adjuntan al abrir una entrada en Adjuntos. Admitimos PNG, JPG, WebP, PDF y texto, hasta 10 MB cada uno. Los PDF abren una vista autorizada en otra pestaña; las imágenes tienen vista previa. Mover una entrada, vincularla a una sesión o renombrar su carpeta nunca la publica.
 
 **Revelar.** Abrí una entrada y elegí Revelaciones. Prepará un nombre conocido y el texto exacto que querés mostrar. Guardar el fragmento no lo revela. Seleccioná personajes y cómo recibieron el conocimiento; entonces usá Revelar. Un archivo destinado a jugadores debe adjuntarse al fragmento correspondiente. La descripción, título real, notas privadas y demás adjuntos del registro permanecen ocultos.
 

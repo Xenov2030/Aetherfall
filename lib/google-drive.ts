@@ -1,3 +1,4 @@
+import { MAX_FILE_BYTES } from './upload-limits';
 import { OAuth2Client } from 'google-auth-library';
 import { randomUUID } from 'node:crypto';
 import { assert, HttpError } from './errors';
@@ -120,7 +121,7 @@ export class GoogleDriveStore {
     );
     return `drive:${result.id}`;
   }
-  async download(reference: string, maxBytes = 3 * 1024 * 1024) {
+  async download(reference: string, maxBytes = MAX_FILE_BYTES) {
     assert(reference.startsWith('drive:'), 400, 'Referencia de Drive inválida');
     const id = reference.slice(6);
     await this.verifyFolder();

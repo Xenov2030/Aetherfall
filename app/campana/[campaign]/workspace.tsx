@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { JournalPanel, CorrespondencePanel } from '@/components/community-panels';
 import CommercePanel from '@/components/commerce-panel';
 import IntegrationPanel from '@/components/integration-panel';
+import { MAX_FILE_BYTES, UPLOAD_CHUNK_BYTES } from '@/lib/upload-limits';
 import StoragePanel from '@/components/storage-panel';
 import { characterIsSelectable } from '@/lib/character-catalog';
 import {
@@ -1308,10 +1309,32 @@ function DetailDrawer({
       form.set('file', file);
       if (attachmentFragment) form.set('fragment_id', attachmentFragment);
       if (
-        !(await run(
-          () => request('/attachments', 'POST', form),
-          'Archivo guardado con sus permisos',
-        ))
+        !(await run(async () => {
+          if (file.size > MAX_FILE_BYTES) throw new Error('El archivo no puede superar los 10 MB');
+          if (file.size <= UPLOAD_CHUNK_BYTES) return request('/attachments', 'POST', form);
+          const session = await request('/uploads', 'POST', {
+            record_id: r.id,
+            fragment_id: attachmentFragment || null,
+            name: file.name.slice(0, 180),
+            mime: file.type,
+            size: file.size,
+          });
+          try {
+            for (let offset = 0; offset < file.size; offset += UPLOAD_CHUNK_BYTES) {
+              const response = await fetch(`${base}/uploads/${session.id}?offset=${offset}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/octet-stream' },
+                body: file.slice(offset, offset + UPLOAD_CHUNK_BYTES),
+              });
+              if (!response.ok)
+                throw new Error((await response.json()).error || 'No se pudo cargar la imagen');
+            }
+            return await request(`/uploads/${session.id}/complete`, 'POST', {});
+          } catch (error) {
+            await request(`/uploads/${session.id}`, 'DELETE').catch(() => {});
+            throw error;
+          }
+        }, 'Archivo guardado con sus permisos'))
       )
         break;
     }
@@ -1838,14 +1861,14 @@ function DetailDrawer({
           <>
             <p className="notice">
               {canManage
-                ? 'Los archivos privados no aparecen a jugadores. Para compartir uno, adjuntalo a un fragmento y revelá ese fragmento. Máximo 3 MB por archivo.'
+                ? 'Los archivos privados no aparecen a jugadores. Para compartir uno, adjuntalo a un fragmento y revelá ese fragmento. Máximo 10 MB por archivo.'
                 : 'Las descargas requieren autorización en el servidor. Si se usa S3, sus enlaces temporales caducan en 60 segundos.'}
             </p>
             {canManage && (
               <div className="upload-box">
                 <Upload size={26} />
                 <h3>Conservá el original</h3>
-                <p>PNG, JPG, WebP, PDF o texto · Hasta 3 MB</p>
+                <p>PNG, JPG, WebP, PDF o texto · Hasta 10 MB</p>
                 <Field label="Visibilidad del archivo">
                   <select
                     value={attachmentFragment}

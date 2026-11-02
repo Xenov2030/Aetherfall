@@ -17,6 +17,7 @@ import * as service from '@/lib/service';
 import { validateFile, putObject, readObject, signedObject, proxyObject } from '@/lib/storage';
 import { exportCampaign } from '@/lib/backup';
 import { storageStatus, checkDrive, backupToDrive } from '@/lib/drive-backup';
+import { startUpload, appendUpload, finishUpload, cancelUpload } from '@/lib/large-upload';
 import { joinLink } from '@/lib/join-links';
 import { characterChoices, claimCharacter } from '@/lib/character-selection';
 import * as community from '@/lib/community';
@@ -375,6 +376,28 @@ async function dispatch(req: NextRequest, { params }: { params: Promise<{ path: 
         },
       });
     }
+    if (section === 'uploads') {
+      assert(!integration, 403, 'Usá la carga de adjuntos de la integración');
+      master(a);
+      if (method === 'POST' && !id) {
+        await rateLimit(`upload:${a.userId}`, 20, 300);
+        return json(await startUpload(a, await body(req)), 201);
+      }
+      if (id) {
+        uuid(id);
+        if (method === 'PATCH')
+          return json(
+            await appendUpload(
+              a,
+              id,
+              Number(req.nextUrl.searchParams.get('offset')),
+              Buffer.from(await req.arrayBuffer()),
+            ),
+          );
+        if (method === 'POST' && p[4] === 'complete') return json(await finishUpload(a, id), 201);
+        if (method === 'DELETE') return json(await cancelUpload(a, id));
+      }
+    }
     if (section === 'attachments') {
       if (method === 'POST') {
         master(a);
@@ -431,14 +454,23 @@ async function dispatch(req: NextRequest, { params }: { params: Promise<{ path: 
             409,
             'El archivo fue modificado fuera de Aetherfall; revisá su integridad antes de compartirlo.',
           );
-          return new NextResponse(new Uint8Array(b), {
-            headers: {
-              'Content-Type': f.mime,
-              'Content-Disposition': `inline; filename*=UTF-8''${encodeURIComponent(f.name)}`,
-              'Cache-Control': 'private, no-store',
-              'X-Content-Type-Options': 'nosniff',
+          return new NextResponse(
+            new ReadableStream({
+              start(controller) {
+                for (let offset = 0; offset < b.length; offset += 256 * 1024)
+                  controller.enqueue(new Uint8Array(b.subarray(offset, offset + 256 * 1024)));
+                controller.close();
+              },
+            }),
+            {
+              headers: {
+                'Content-Type': f.mime,
+                'Content-Disposition': `inline; filename*=UTF-8''${encodeURIComponent(f.name)}`,
+                'Cache-Control': 'private, no-store',
+                'X-Content-Type-Options': 'nosniff',
+              },
             },
-          });
+          );
         }
         return NextResponse.redirect(await signedObject(f.object_key, f.mime, f.name), {
           status: 307,

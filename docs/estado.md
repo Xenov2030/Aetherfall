@@ -27,7 +27,7 @@ Los módulos pendientes no tienen botones que finjan ejecutarlos. Las herramient
 
 - No hay conexión validada con PostgreSQL/Drive/SMTP externos: faltan cuentas/configuración. No hay URL pública nueva ni se modificó el sitio Vercel aportado.
 - El modo local no se habilita en producción. Las pruebas de almacenamiento local validan autorización y bytes, pero no sustituyen una prueba de carpetas y originales en la cuenta real del proveedor elegido.
-- Subidas originales de hasta 3 MB, de tipos admitidos; no hay antivirus, OCR, miniaturas persistidas ni procesamiento de archivos grandes. Los originales no se alteran.
+- Subidas originales de hasta 10 MB, de tipos admitidos; no hay antivirus, OCR, miniaturas persistidas ni procesamiento de archivos grandes. Los originales no se alteran.
 - Textos planos: no hay importación HTML ni ejecución de contenido de documentos. Etiquetas y datos de varios tipos todavía usan el editor de datos complementarios; algunas pantallas son deliberadamente sencillas.
 - Historial recuperable para entradas/fichas; los fragmentos son instantáneas inmutables: preparar uno nuevo y retirar el anterior para corregir una revelación. No hay editor de versiones de fragmento ni de adjuntos.
 - El rol de máster autoriza a ver los campos de la ficha y contenido de campaña, pero no los borradores privados de bitácoras ni tiradas privadas ajenas mediante API web. El operador con credenciales de base sí tiene acceso administrativo para respaldo; no se promete cifrado extremo a extremo frente a ese operador.

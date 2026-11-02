@@ -120,6 +120,28 @@ async function main() {
     await dialog.getByRole('button', { name: 'Guardar en privado' }).click();
     await dialog.waitFor({ state: 'hidden' });
     await master.page.getByRole('status').filter({ hasText: 'Contenido guardado' }).waitFor();
+    await master.page.getByRole('button', { name: 'Archivo', exact: true }).click();
+    await master.page.getByText(title, { exact: true }).click();
+    const fileDrawer = master.page.getByRole('dialog');
+    await fileDrawer.getByRole('button', { name: /Adjuntos/ }).click();
+    const largeImage = Buffer.alloc(10 * 1024 * 1024, 0);
+    Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aN1cAAAAASUVORK5CYII=',
+      'base64',
+    ).copy(largeImage);
+    await fileDrawer
+      .locator('input[type=file]')
+      .setInputFiles({ name: 'imagen-10mb.png', mimeType: 'image/png', buffer: largeImage });
+    await fileDrawer.getByText('imagen-10mb.png', { exact: true }).waitFor({ timeout: 60000 });
+    const imageUrl = await fileDrawer
+      .getByRole('img', { name: 'imagen-10mb.png', exact: true })
+      .getAttribute('src');
+    assert(imageUrl);
+    const downloaded = await master.context.request.get(origin + imageUrl);
+    assert.equal(downloaded.status(), 200);
+    assert.deepEqual(await downloaded.body(), largeImage);
+    await fileDrawer.getByRole('button', { name: 'Cerrar detalle', exact: true }).click();
+    await master.page.getByRole('button', { name: 'Inicio', exact: true }).click();
     const ov = await api(master.context, '/overview');
     assert.equal(ov.status, 200);
     const char1 = ov.data.characters.find((r: any) => r.title === 'Lira del Umbral');

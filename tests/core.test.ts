@@ -174,7 +174,7 @@ test('Los adjuntos privados, originales y de fragmentos requieren la misma autor
 test('Rechaza tipos falsificados, SVG y archivos excesivos', () => {
   assert.throws(() => validateFile(Buffer.from('<svg onload=alert(1)>'), 'image/png'));
   assert.throws(() => validateFile(Buffer.from('<svg/>'), 'image/svg+xml'));
-  assert.throws(() => validateFile(Buffer.alloc(3 * 1024 * 1024 + 1), 'text/plain'));
+  assert.throws(() => validateFile(Buffer.alloc(10 * 1024 * 1024 + 1), 'text/plain'));
 });
 test('Edición de fichas con lista de campos, persistencia, historial y conflictos de versión', async () => {
   const before = await readRecord(master, char1);
@@ -703,4 +703,66 @@ test('Enlace compartido admite jugadores con correo verificado, caduca, rota y r
     token.split('.')[0],
   ]);
   await assert.rejects(registerFromLink({ ...input, token }));
+});
+
+test('Imágenes de 10 MB: partes privadas, límites, permisos y bytes originales', async () => {
+  const { startUpload, appendUpload, finishUpload, cancelUpload } =
+    await import('../lib/large-upload');
+  const { MAX_FILE_BYTES, UPLOAD_CHUNK_BYTES } = await import('../lib/upload-limits');
+  const record = await createRecord(master, { kind: 'idea', title: 'Imagen grande privada' });
+  const bytes = Buffer.alloc(MAX_FILE_BYTES, 17);
+  bytes.set([255, 216, 255]);
+  validateFile(bytes, 'image/jpeg');
+  await assert.rejects(
+    startUpload(master, {
+      record_id: record.id,
+      name: 'grande.jpg',
+      mime: 'image/jpeg',
+      size: MAX_FILE_BYTES + 1,
+    }),
+  );
+  await assert.rejects(
+    startUpload(p1, {
+      record_id: record.id,
+      name: 'grande.jpg',
+      mime: 'image/jpeg',
+      size: bytes.length,
+    }),
+  );
+  const upload = await startUpload(master, {
+    record_id: record.id,
+    name: 'grande.jpg',
+    mime: 'image/jpeg',
+    size: bytes.length,
+  });
+  await assert.rejects(finishUpload(master, upload.id));
+  await assert.rejects(appendUpload(master, upload.id, 1, bytes.subarray(0, 10)));
+  await assert.rejects(
+    appendUpload(master, upload.id, 0, bytes.subarray(0, UPLOAD_CHUNK_BYTES + 1)),
+  );
+  await assert.rejects(
+    appendUpload({ ...master, userId: p1.userId }, upload.id, 0, bytes.subarray(0, 10)),
+  );
+  for (let offset = 0; offset < bytes.length; offset += UPLOAD_CHUNK_BYTES) {
+    const part = bytes.subarray(offset, offset + UPLOAD_CHUNK_BYTES);
+    assert.equal(
+      (await appendUpload(master, upload.id, offset, part)).received,
+      offset + part.length,
+    );
+  }
+  const result = await finishUpload(master, upload.id);
+  const attachment = await one('SELECT * FROM attachments WHERE id=$1', [result.id]);
+  assert.equal(attachment!.size, MAX_FILE_BYTES);
+  assert.deepEqual(await readObject(attachment!.object_key), bytes);
+  assert.equal(await canReadAttachment(p1, attachment!), false);
+  assert.equal(await one('SELECT id FROM pending_uploads WHERE id=$1', [upload.id]), undefined);
+  const invalid = await startUpload(master, {
+    record_id: record.id,
+    name: 'falso.png',
+    mime: 'image/png',
+    size: 3,
+  });
+  await appendUpload(master, invalid.id, 0, Buffer.from('abc'));
+  await assert.rejects(finishUpload(master, invalid.id));
+  await cancelUpload(master, invalid.id);
 });
